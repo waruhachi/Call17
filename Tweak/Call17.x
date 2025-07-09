@@ -10,6 +10,39 @@ static void showFLEXExplorer() {
 		id flexManager = [flexManagerClass sharedManager];
 		if (flexManager && [flexManager respondsToSelector:@selector(isHidden)] && [flexManager isHidden]) {
 			[flexManager showExplorer];
+			
+			// Fix: Set a higher window level to ensure FLEX appears above call screen
+			// Get the FLEX window and set its level above system alerts
+			UIWindow *flexWindow = nil;
+			
+			// Try different methods to get the FLEX window
+			if ([flexManager respondsToSelector:@selector(explorerWindow)]) {
+				flexWindow = [flexManager explorerWindow];
+			} else if ([flexManager respondsToSelector:@selector(explorerViewController)]) {
+				id explorerVC = [flexManager explorerViewController];
+				if (explorerVC && [explorerVC respondsToSelector:@selector(view)]) {
+					UIView *view = [explorerVC view];
+					flexWindow = view.window;
+				}
+			}
+			
+			// Fallback: search through all windows for FLEX window
+			if (!flexWindow) {
+				for (UIWindow *window in [UIApplication sharedApplication].windows) {
+					NSString *windowClass = NSStringFromClass([window class]);
+					if ([windowClass containsString:@"FLEX"] || 
+						[windowClass containsString:@"Explorer"]) {
+						flexWindow = window;
+						break;
+					}
+				}
+			}
+			
+			// Set the window level to appear above call screen
+			if (flexWindow) {
+				// Set window level above call screen and system alerts
+				flexWindow.windowLevel = UIWindowLevelAlert + 1;
+			}
 		}
 	}
 }
