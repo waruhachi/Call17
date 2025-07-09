@@ -14,11 +14,11 @@ static void showFLEXExplorer() {
 			UIWindow *flexWindow = nil;
 			
 			if ([flexManager respondsToSelector:@selector(explorerWindow)]) {
-				flexWindow = [flexManager explorerWindow];
+				flexWindow = [flexManager performSelector:@selector(explorerWindow)];
 			} else if ([flexManager respondsToSelector:@selector(explorerViewController)]) {
-				id explorerVC = [flexManager explorerViewController];
+				id explorerVC = [flexManager performSelector:@selector(explorerViewController)];
 				if (explorerVC && [explorerVC respondsToSelector:@selector(view)]) {
-					UIView *view = [explorerVC view];
+					UIView *view = [explorerVC performSelector:@selector(view)];
 					flexWindow = view.window;
 				}
 			}
