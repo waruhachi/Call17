@@ -10,6 +10,33 @@ static void showFLEXExplorer() {
 		id flexManager = [flexManagerClass sharedManager];
 		if (flexManager && [flexManager respondsToSelector:@selector(isHidden)] && [flexManager isHidden]) {
 			[flexManager showExplorer];
+			
+			UIWindow *flexWindow = nil;
+			
+			if ([flexManager respondsToSelector:@selector(explorerWindow)]) {
+				flexWindow = [flexManager explorerWindow];
+			} else if ([flexManager respondsToSelector:@selector(explorerViewController)]) {
+				id explorerVC = [flexManager explorerViewController];
+				if (explorerVC && [explorerVC respondsToSelector:@selector(view)]) {
+					UIView *view = [explorerVC view];
+					flexWindow = view.window;
+				}
+			}
+			
+			if (!flexWindow) {
+				for (UIWindow *window in [UIApplication sharedApplication].windows) {
+					NSString *windowClass = NSStringFromClass([window class]);
+					if ([windowClass containsString:@"FLEX"] || 
+						[windowClass containsString:@"Explorer"]) {
+						flexWindow = window;
+						break;
+					}
+				}
+			}
+			
+			if (flexWindow) {
+				flexWindow.windowLevel = UIWindowLevelAlert + 1;
+			}
 		}
 	}
 }
