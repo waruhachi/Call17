@@ -1,0 +1,9 @@
+Package: moe.waru.call17
+Name: Call17
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: Backport of the iOS 17 call screen for iOS 14-16
+Maintainer: waruhachi
+Author: waruhachi
+Section: Tweaks
+Depends: mobilesubstrate
