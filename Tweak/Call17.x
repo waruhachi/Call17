@@ -1,5 +1,7 @@
 #import "Call17.h"
 
+const NSUInteger kPHAudioControlsButtonTypeContacts = 6;
+
 %hook PHAudioCallViewController
 
 - (void)viewDidLoad {
@@ -32,23 +34,25 @@
 - (id)findContactsButton:(UIView *)view {
 	id controlsView = [self findControlsView:view];
 	if (controlsView) {
-		NSArray *buttonsArray = [controlsView performSelector:@selector(buttonsArray)];
+		if ([controlsView respondsToSelector:@selector(buttonsArray)]) {
+			NSArray *buttonsArray = [controlsView performSelector:@selector(buttonsArray)];
 
-		for (id button in buttonsArray) {
-			if (!button) {
-				continue;
-			}
-
-			if ([button isKindOfClass:[%c(PHAudioControlsButton) class]]) {
-				NSUInteger controlType = 0;
-				@try {
-					controlType = [(PHAudioControlsButton *)button controlType];
-				}
-				@catch (NSException *exception) {
+			for (id button in buttonsArray) {
+				if (!button) {
 					continue;
 				}
-				if (controlType == 6) {
-					return button;
+
+				if ([button isKindOfClass:[%c(PHAudioControlsButton) class]]) {
+					NSUInteger controlType = 0;
+					@try {
+						controlType = [(PHAudioControlsButton *)button controlType];
+					}
+					@catch (NSException *exception) {
+						continue;
+					}
+					if (controlType == kPHAudioControlsButtonTypeContacts) {
+						return button;
+					}
 				}
 			}
 		}
