@@ -1,12 +1,40 @@
-#import <Foundation/Foundation.h>
-#import <UIKit/UIKit.h>
-#import <dlfcn.h>
-#import <objc/runtime.h>
-#import <roothide.h>
+#include <Foundation/Foundation.h>
+#include <UIKit/UIKit.h>
 
-@interface FLEXManager : NSObject
-+ (instancetype)sharedManager;
-- (void)showExplorer;
-- (void)hideExplorer;
-@property (nonatomic, readonly) BOOL isHidden;
+@interface UIControlTargetAction : NSObject {
+	UIAction *_actionHandler;
+	__unsafe_unretained id *_target;
+	SEL _action;
+	NSUInteger _eventMask;
+}
+@property (nonatomic) BOOL cancelled;
+- (id)description;
+@end
+
+@interface PHBottomBarButton : UIButton
+@property (nonatomic, copy, readwrite) UIColor *backgroundColor;
+@end
+
+@interface PHAbstractCallParticipantLabelView : UIView
+@end
+
+@interface PHSingleCallParticipantLabelView : PHAbstractCallParticipantLabelView
+@end
+
+@interface PHCallParticipantsView : UIView
+@property (atomic, strong, readwrite) PHSingleCallParticipantLabelView *singleCallLabelView;
+@end
+
+@interface PHAudioCallControlsView : UIView
+@end
+
+@interface PHAudioControlsButton : UIButton
+@property (nonatomic, strong) NSMutableArray *_targetActions;
+@property (nonatomic, assign, readwrite) NSUInteger controlType;
+@end
+
+@interface PHAudioCallViewController : UIViewController
+- (id)findContactsButton:(UIView *)view;
+- (id)findControlsView:(UIView *)view;
+- (void)customInfoButtonTapped:(UIButton *)sender;
 @end

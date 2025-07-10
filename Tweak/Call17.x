@@ -1,96 +1,74 @@
 #import "Call17.h"
 
-static void showFLEXExplorer() {
-	NSString *dylibPath = jbroot(@"/Library/MobileSubstrate/DynamicLibraries/libFLEX.dylib");
+%hook PHAudioCallViewController
 
-	dlopen(dylibPath.UTF8String, RTLD_NOW);
+- (void)viewDidLoad {
+	%orig;
 
-	Class flexManagerClass = objc_getClass("FLEXManager");
-	if (flexManagerClass) {
-		id flexManager = [flexManagerClass sharedManager];
-		if (flexManager && [flexManager respondsToSelector:@selector(isHidden)] && [flexManager isHidden]) {
-			[flexManager showExplorer];
-			
-			UIWindow *flexWindow = nil;
-			
-			if ([flexManager respondsToSelector:@selector(explorerWindow)]) {
-				flexWindow = [flexManager performSelector:@selector(explorerWindow)];
-			} else if ([flexManager respondsToSelector:@selector(explorerViewController)]) {
-				id explorerVC = [flexManager performSelector:@selector(explorerViewController)];
-				if (explorerVC && [explorerVC respondsToSelector:@selector(view)]) {
-					UIView *view = [explorerVC performSelector:@selector(view)];
-					flexWindow = view.window;
-				}
-			}
-			
-			if (!flexWindow) {
-				for (UIWindow *window in [UIApplication sharedApplication].windows) {
-					NSString *windowClass = NSStringFromClass([window class]);
-					if ([windowClass containsString:@"FLEX"] || 
-						[windowClass containsString:@"Explorer"]) {
-						flexWindow = window;
-						break;
-					}
-				}
-			}
-			
-			if (flexWindow) {
-				flexWindow.windowLevel = UIWindowLevelAlert + 1;
-			}
-		}
+	UIButton *infoButton = [UIButton buttonWithType:UIButtonTypeInfoLight];
+	infoButton.tintColor = [UIColor whiteColor];
+
+	[self.view addSubview:infoButton];
+	infoButton.translatesAutoresizingMaskIntoConstraints = NO;
+	[NSLayoutConstraint activateConstraints:@[
+		[infoButton.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:20],
+		[infoButton.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-20],
+		[infoButton.widthAnchor constraintEqualToConstant:30],
+		[infoButton.heightAnchor constraintEqualToConstant:30]
+	]];
+
+	[infoButton addTarget:self action:@selector(customInfoButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
+}
+
+%new
+- (void)customInfoButtonTapped:(UIButton *)sender {
+	id contactsButton = [self findContactsButton:self.view];
+	if (contactsButton) {
+		[contactsButton sendActionsForControlEvents:UIControlEventTouchUpInside];
 	}
 }
 
-%hook PHInCallRootViewController
+%new
+- (id)findContactsButton:(UIView *)view {
+	id controlsView = [self findControlsView:view];
+	if (controlsView) {
+		NSArray *buttonsArray = [controlsView performSelector:@selector(buttonsArray)];
 
-- (void)viewDidAppear:(BOOL)animated {
-	%orig;
+		for (id button in buttonsArray) {
+			if (!button) {
+				continue;
+			}
 
-	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-		showFLEXExplorer();
-	});
-}
-
-%end
-
-%hook ICSCallDisplayController
-
-- (void)viewDidAppear:(BOOL)animated {
-	%orig;
-
-	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-		showFLEXExplorer();
-	});
-}
-
-%end
-
-%hook ICSApplicationDelegate
-
-- (void)applicationDidBecomeActive:(UIApplication *)application {
-	%orig;
-
-	dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-		showFLEXExplorer();
-	});
-}
-
-%end
-
-%hook UIViewController
-
-- (void)viewDidAppear:(BOOL)animated {
-	%orig;
-
-	NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
-	if ([bundleIdentifier isEqualToString:@"com.apple.InCallService"]) {
-		NSString *className = NSStringFromClass([self class]);
-		if ([className containsString:@"Call"] || [className containsString:@"InCall"] || [className containsString:@"Phone"]) {
-			dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-				showFLEXExplorer();
-			});
+			if ([button isKindOfClass:[%c(PHAudioControlsButton) class]]) {
+				NSUInteger controlType = 0;
+				@try {
+					controlType = [(PHAudioControlsButton *)button controlType];
+				}
+				@catch (NSException *exception) {
+					continue;
+				}
+				if (controlType == 6) {
+					return button;
+				}
+			}
 		}
 	}
+	return nil;
+}
+
+%new
+- (id)findControlsView:(UIView *)view {
+	for (UIView *subview in view.subviews) {
+		if ([subview isKindOfClass:[%c(PHAudioCallControlsView) class]]) {
+			return subview;
+		}
+
+		id found = [self findControlsView:subview];
+		if (found) {
+			return found;
+		}
+	}
+	return nil;
 }
 
 %end
